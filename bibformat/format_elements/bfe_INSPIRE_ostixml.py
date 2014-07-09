@@ -28,7 +28,7 @@ def format_element(bfo):
 
     Serializes selected record info as "OSTI" xml
     """
-
+    
     try:
         from lxml import etree
     except ImportError:
@@ -36,7 +36,7 @@ def format_element(bfo):
 
     from invenio.search_engine import perform_request_search, \
         get_fieldvalues, record_exists
-
+    import re
     # a dictionary of Inspire subjects mapped to OSTI coded research categories
     osticats = {
         'Accelerators': '43 PARTICLE ACCELERATORS',
@@ -76,7 +76,7 @@ def format_element(bfo):
         node(rec, "title").text = unicode(title, "utf-8")
 
     # The authors in the ostixml are all strung together between author tags
-    # delimited by ';' If zero or > 10 authors don't show any authors
+    # delimited by ';' 
     authors = get_fieldvalues(recid, "100__a") \
         + get_fieldvalues(recid, "700__a")
 
@@ -84,13 +84,24 @@ def format_element(bfo):
         node(rec, 'author').text = \
         '; '.join([unicode(a, "utf-8") for a in authors])
 
+    elif len(authors) > 10:
+        node(rec, 'author').text = \
+        '; '.join([unicode(a, "utf-8") for a in authors[:3]]) + '; et al.'
+
     for category in get_fieldvalues(recid, "65017a"):
         if osticats.has_key(category):
             node(rec, 'subj_category').text = osticats[category]
             node(rec, 'subj_keywords').text = category
 
     for pubdate in get_fieldvalues(recid, "269__c"):
-        node(rec, 'date').text = pubdate
+        if re.search("\d{4}\-\d\d\-\d\d", pubdate):
+            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})\-(\d{2})',r'\2/\3/\1',pubdate)
+        elif re.search("\d{4}\-\d\d", pubdate):
+            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})',r'\2/01/\1',pubdate)
+        elif re.search("\d{4}", pubdate):
+            node(rec, 'date').text = re.sub(r'(\d{4})',r'01/01/\1',pubdate)
+        else:
+            print "Bad date: ", recid, pubdate
 
     #Fermilab report numbers mapped to OSTI doc types
     for dtype in get_fieldvalues(recid, "037__a"):
@@ -113,14 +124,18 @@ def format_element(bfo):
     journals = bfo.fields('773__', repeatable_subfields_p=True)
     for journal in journals:
         if journal.has_key('p'):
-            jinfo = str(journal['p'][0])
+            jname = str(journal['p'][0])
+            node(rec, 'journal_name').text = unicode(jname, "utf-8")
             if journal.has_key('v'):
-                jinfo += ' %s' % journal['v'][0]
-            if journal.has_key('c'):
-                jinfo += ':%s' % journal['c'][0]
-            if journal.has_key('y'):
-                jinfo += ',%s' % journal['y'][0]
-            node(rec, 'journal_info').text = unicode(jinfo, "utf-8")
+                jvol = str(journal['v'][0])
+                node(rec, 'journal_volume').text = unicode(jvol, "utf-8")
+            else:
+                node(rec, 'journal_volume')
+            if journal.has_key('n'):
+                jnum = str(journal['n'][0])
+                node(rec, 'journal_issue').text = unicode(jnum, "utf-8")
+            else:
+                node(rec, 'journal_issue')    
 
         confstring = ''
         # without t info or cnum don't print anything
@@ -168,14 +183,31 @@ def format_element(bfo):
 
     urls = bfo.fields('8564_', repeatable_subfields_p=True)
     for url in urls:
+        if url.has_key('u') and "inspirehep" in url['u'][0] and "pdf" in url['u'][0]:
+            #node(rec, 'url').text = 
+            inspirehep = unicode(url['u'][0], "utf-8")
         if url.has_key('y') and "FERMILAB" in url['y'][0] and url.has_key('u'):
-            node(rec, 'url').text = unicode(url['u'][0], "utf-8")
+            fermilab = unicode(url['u'][0], "utf-8")
+
+    if inspirehep:
+        node(rec, 'url').text = inspirehep 
+    elif fermilab:
+        node(rec, 'url').text = fermilab
 
     if eprint:
         node(rec, 'availability').text = \
-            'http://arXiv.org/abs/%s' % eprint
+            'http://arXiv.org/abs/%s.pdf' % re.sub(r'arXiv:(\d{4}\.\d{4})',r'\1',eprint)
 
-    node(rec, 'sponsor_org').text = 'DOE Office of Science'
+    ab = bfo.field('520__')
+    if ab.has_key('a'):
+        node(rec, "abstract").text = unicode(ab['a'], "utf-8")
+
+    node(rec, 'sponsor_org').text = 'USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)'
+    
+    for contributor_organization in get_fieldvalues(recid, "710__g"):
+        node(rec, "contributor_organizations").text = unicode(contributor_organization, "utf-8")
+
+    node(rec, 'doe_contract_nos').text = 'De-AC02-07CH11359'
 
     dt_harvest = get_modification_date(recid)
     if dt_harvest:
