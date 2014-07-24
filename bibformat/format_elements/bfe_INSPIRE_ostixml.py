@@ -54,6 +54,8 @@ def format_element(bfo):
         'Other': '71 CLASSICAL AND QUANTUM MECHANICS, GENERAL PHYSICS',
         }
 
+    FNAL_sponsoring_organization = 'USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)'
+    FNAL_DOE_contract_number = 'De-AC02-07CH11359'
 
     rec = etree.Element("rec")
     recid = bfo.recID
@@ -196,18 +198,18 @@ def format_element(bfo):
 
     if eprint:
         node(rec, 'availability').text = \
-            'http://arXiv.org/abs/%s.pdf' % re.sub(r'arXiv:(\d{4}\.\d{4})',r'\1',eprint)
+            'http://arXiv.org/pdf/%s' % re.sub(r'arXiv:(\d{4}\.\d{4})',r'\1',eprint)
 
     ab = bfo.field('520__')
     if ab.has_key('a'):
         node(rec, "abstract").text = unicode(ab['a'], "utf-8")
 
-    node(rec, 'sponsor_org').text = 'USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)'
+    node(rec, 'sponsor_org').text = FNAL_sponsoring_organization
     
     for contributor_organization in get_fieldvalues(recid, "710__g"):
         node(rec, "contributor_organizations").text = unicode(contributor_organization, "utf-8")
 
-    node(rec, 'doe_contract_nos').text = 'De-AC02-07CH11359'
+    node(rec, 'doe_contract_nos').text = FNAL_DOE_contract_number
 
     dt_harvest = get_modification_date(recid)
     if dt_harvest:
