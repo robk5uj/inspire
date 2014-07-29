@@ -20,6 +20,9 @@
 """
 BibFormat element - outputs special purpose OSTI xml
 """
+FNAL_SPONSORING_ORGANIZATION = 'USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)'
+FNAL_DOE_CONTRACT_NUMBER = 'De-AC02-07CH11359'
+
 
 def format_element(bfo):
     """
@@ -28,7 +31,7 @@ def format_element(bfo):
 
     Serializes selected record info as "OSTI" xml
     """
-    
+
     try:
         from lxml import etree
     except ImportError:
@@ -54,8 +57,6 @@ def format_element(bfo):
         'Other': '71 CLASSICAL AND QUANTUM MECHANICS, GENERAL PHYSICS',
         }
 
-    FNAL_sponsoring_organization = 'USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)'
-    FNAL_DOE_contract_number = 'De-AC02-07CH11359'
 
     rec = etree.Element("rec")
     recid = bfo.recID
@@ -78,7 +79,7 @@ def format_element(bfo):
         node(rec, "title").text = unicode(title, "utf-8")
 
     # The authors in the ostixml are all strung together between author tags
-    # delimited by ';' 
+    # delimited by ';'
     authors = get_fieldvalues(recid, "100__a") \
         + get_fieldvalues(recid, "700__a")
 
@@ -91,19 +92,18 @@ def format_element(bfo):
         '; '.join([unicode(a, "utf-8") for a in authors[:3]]) + '; et al.'
 
     for category in get_fieldvalues(recid, "65017a"):
-        if osticats.has_key(category):
+#        if osticats.has_key(category):
+        if category in osticats:
             node(rec, 'subj_category').text = osticats[category]
             node(rec, 'subj_keywords').text = category
 
     for pubdate in get_fieldvalues(recid, "269__c"):
         if re.search("\d{4}\-\d\d\-\d\d", pubdate):
-            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})\-(\d{2})',r'\2/\3/\1',pubdate)
+            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})\-(\d{2})', r'\2/\3/\1', pubdate)
         elif re.search("\d{4}\-\d\d", pubdate):
-            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})',r'\2/01/\1',pubdate)
+            node(rec, 'date').text = re.sub(r'(\d{4})\-(\d{2})', r'\2/01/\1', pubdate)
         elif re.search("\d{4}", pubdate):
-            node(rec, 'date').text = re.sub(r'(\d{4})',r'01/01/\1',pubdate)
-        else:
-            print "Bad date: ", recid, pubdate
+            node(rec, 'date').text = re.sub(r'(\d{4})', r'01/01/\1', pubdate)
 
     #Fermilab report numbers mapped to OSTI doc types
     for dtype in get_fieldvalues(recid, "037__a"):
@@ -125,25 +125,25 @@ def format_element(bfo):
     # make a note that looks okay (sort of)
     journals = bfo.fields('773__', repeatable_subfields_p=True)
     for journal in journals:
-        if journal.has_key('p'):
+        if journal.get('p'):
             jname = str(journal['p'][0])
             node(rec, 'journal_name').text = unicode(jname, "utf-8")
-            if journal.has_key('v'):
+            if journal.get('v'):
                 jvol = str(journal['v'][0])
                 node(rec, 'journal_volume').text = unicode(jvol, "utf-8")
             else:
                 node(rec, 'journal_volume')
-            if journal.has_key('n'):
+            if journal.get('n'):
                 jnum = str(journal['n'][0])
                 node(rec, 'journal_issue').text = unicode(jnum, "utf-8")
             else:
-                node(rec, 'journal_issue')    
+                node(rec, 'journal_issue')
 
         confstring = ''
         # without t info or cnum don't print anything
-        if journal.has_key('t'):
+        if journal.get('t'):
             confstring += '%s: ' % journal['t'][0]
-        if journal.has_key('w'):
+        if journal.get('w'):
             conf_info = {}
             cnum = journal['w'][0].replace("/", "-")
             idrec = perform_request_search(p="111__g:" + str(cnum), \
@@ -156,7 +156,7 @@ def format_element(bfo):
                         conf_info[subfield] = val[0]
                 confstring += '%s. %s, %s.' % \
                     tuple(conf_info.get(x, '') for x in ('a', 'c', 'd'))
-        if journal.has_key('c') and confstring != '':
+        if journal.get('c') and confstring != '':
             confstring += ' pp: %s' % journal['c'][0]
 
     for doi in get_fieldvalues(recid, "0247_a"):
@@ -185,31 +185,31 @@ def format_element(bfo):
 
     urls = bfo.fields('8564_', repeatable_subfields_p=True)
     for url in urls:
-        if url.has_key('u') and "inspirehep" in url['u'][0] and "pdf" in url['u'][0]:
-            #node(rec, 'url').text = 
+        if url.get('u') and "inspirehep" in url['u'][0] and "pdf" in url['u'][0]:
+            #node(rec, 'url').text =
             inspirehep = unicode(url['u'][0], "utf-8")
-        if url.has_key('y') and "FERMILAB" in url['y'][0] and url.has_key('u'):
+        if url.get('y') and "FERMILAB" in url['y'][0] and url.get('u'):
             fermilab = unicode(url['u'][0], "utf-8")
 
     if inspirehep:
-        node(rec, 'url').text = inspirehep 
+        node(rec, 'url').text = inspirehep
     elif fermilab:
         node(rec, 'url').text = fermilab
 
     if eprint:
         node(rec, 'availability').text = \
-            'http://arXiv.org/pdf/%s' % re.sub(r'arXiv:(\d{4}\.\d{4})',r'\1',eprint)
+            'http://arXiv.org/pdf/%s' % re.sub(r'arXiv:(\d{4}\.\d{4})', r'\1', eprint)
 
-    ab = bfo.field('520__')
-    if ab.has_key('a'):
-        node(rec, "abstract").text = unicode(ab['a'], "utf-8")
+    abstract = bfo.field('520__')
+    if abstract.get('a'):
+        node(rec, "abstract").text = unicode(abstract['a'], "utf-8")
 
-    node(rec, 'sponsor_org').text = FNAL_sponsoring_organization
-    
+    node(rec, 'sponsor_org').text = FNAL_SPONSORING_ORGANIZATION
+
     for contributor_organization in get_fieldvalues(recid, "710__g"):
         node(rec, "contributor_organizations").text = unicode(contributor_organization, "utf-8")
 
-    node(rec, 'doe_contract_nos').text = FNAL_DOE_contract_number
+    node(rec, 'doe_contract_nos').text = FNAL_DOE_CONTRACT_NUMBER
 
     dt_harvest = get_modification_date(recid)
     if dt_harvest:
@@ -222,6 +222,7 @@ def format_element(bfo):
     out = etree.tostring(rec, encoding='UTF-8', xml_declaration=False, \
                               pretty_print=True, method='xml').rstrip('\n')
     return out
+
 
 def get_modification_date(recid, fmt="%Y-%m-%d"):
     """
@@ -236,6 +237,7 @@ def get_modification_date(recid, fmt="%Y-%m-%d"):
     return ''
 
 # pylint: disable=W0613
+
 def escape_values(bfo):
     """
     Called by BibFormat in order to check if output of this element
