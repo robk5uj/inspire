@@ -112,8 +112,7 @@ href="http://ccd.fnal.gov/techpubs/fermilab_spires.html")))
                               ' and (r AD or APC)'
                 else:
                     search += ' ' + division
-                search += ' and d ' + date
-#                search += ' and de ' + date
+                search += ' and de ' + date
                 search = re.sub(r'\s+', ' ', search)
                 result = perform_request_search(p=search, cc="HEP")
                 result = len(result)
@@ -179,8 +178,7 @@ method='html').rstrip('\n')
 def main():
     """Writes html product to file with extension html."""
     filename = 'fermilab_research_glance.html'
-    #filename_w = 'www/' + filename
-    filename_w = filename
+    filename_w = 'www/' + filename
     output = open(filename_w, 'w')
     table = create_table()
     output.write(table)
