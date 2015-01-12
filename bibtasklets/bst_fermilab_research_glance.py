@@ -1,47 +1,31 @@
 """Generates a html page showing numbers of FNAL preprints written by
    type, FNAL Division and date."""
+
+from os.path import join
 import datetime
+from dateutil.relativedelta import relativedelta
 import pytz
 import re
 
 from invenio.search_engine import perform_request_search
-CHICAGO_TIMEZONE = pytz.timezone('America/Chicago')
 
 from lxml import etree
 import lxml.html
 from lxml.html import builder as E
 from StringIO import StringIO
 
-YEAR = int(CHICAGO_TIMEZONE.fromutc(datetime.datetime.utcnow()).strftime('%Y'))
-YEAR_1 = str(YEAR - 1)
-YEAR_2 = str(YEAR - 2)
-YEAR = str(YEAR)
+CHICAGO_TIMEZONE = pytz.timezone('America/Chicago')
+NOW = CHICAGO_TIMEZONE.fromutc(datetime.datetime.utcnow())
 
-MONTH = int(CHICAGO_TIMEZONE.fromutc(datetime.datetime.utcnow()) \
-.strftime('%m'))
-MONTH_1 = MONTH - 1
-MONTH_2 = MONTH - 2
+DATE_TIME_STAMP = NOW.strftime('%Y-%m-%d %H:%M:%S')
 
-if MONTH == 1:
-    MONTH = YEAR + '-01'
-    MONTH_1 = YEAR_1 + '-12'
-    MONTH_2 = YEAR_1 + '-11'
-elif MONTH == 2:
-    MONTH = YEAR + '-02'
-    MONTH_1 = YEAR + '-01'
-    MONTH_2 = YEAR_1 + '-12'
-else:
-    FMONTH = lambda x: '-0' + str(x) if x < 10 else '-' + str(x)
-    MONTH = YEAR + FMONTH(MONTH)
-    MONTH_1 = YEAR + FMONTH(MONTH_1)
-    MONTH_2 = YEAR + FMONTH(MONTH_2)
+MONTH = NOW.strftime('%Y-%m')
+MONTH_1 = (NOW + relativedelta(months=-1)).strftime('%Y-%m')
+MONTH_2 = (NOW + relativedelta(months=-2)).strftime('%Y-%m')
 
-DATE_TIME_STAMP = \
-CHICAGO_TIMEZONE.fromutc(datetime.datetime.utcnow()).strftime('%Y-%m-%d \
- %H:%M:%S')
-DATE_STAMP = \
-CHICAGO_TIMEZONE.fromutc(datetime.datetime.utcnow()).strftime('%Y-%m-%d')
-
+YEAR = str(NOW.year)
+YEAR_1 = str(NOW.year - 1)
+YEAR_2 = str(NOW.year - 2)
 
 def create_table():
     """HTML generation by lxml.html tree."""
@@ -178,10 +162,10 @@ method='html').rstrip('\n')
 def main():
     """Writes html product to file with extension html."""
     filename = 'fermilab_research_glance.html'
-    filename_w = 'www/' + filename
-    output = open(filename_w, 'w')
+    filename_w = join('www', filename)
     table = create_table()
-    output.write(table)
+    with open(filename_w, 'w') as output:
+        output.write(table)
 
 if __name__ == '__main__':
     try:
