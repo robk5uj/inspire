@@ -31,7 +31,6 @@ chicago_timezone = pytz.timezone('America/Chicago')
 
 SERIES1 = ['thesis', 'misc', 'tm', 'fn', 'proposal', 'workbook', 'bachelors', 'masters', 'design', 'loi', 'pbar', 'nal', 'annual', 'upc', 'ap', 'en', 'exp', 'lu', 'habil', 'vlhcpub']
 SERIES2 = ['PUB', 'CONF']
-#serieses = ['thesis']
 SERIES1.sort()
 
 CFG_FERMILAB_PATH = "/afs/cern.ch/project/inspire/public/fermilab"
@@ -43,11 +42,8 @@ def bst_fermilab():
         reports = []
         authorId = False
         search = "find r fermilab-" + series + "-*"
-        #search = "find recid 1261432"
-        #print search
         result = perform_request_search(p=search, cc='HEP')
         for recid in result :
-            #print recid
             reportValues = get_fieldvalues(recid, '037__a')
             author = get_fieldvalues(recid, '100__a')
             authorId = get_fieldvalues(recid, '100__i')
@@ -71,16 +67,11 @@ def bst_fermilab():
                 authorAff = authorAff[0]
             else :
                 authorAff = ''
-            #print "author = ", author
-            #print "title = ", title
-            #print "authorId = ", authorId
-            #print "experiment = ", experiment
             if authorId :
                 authorId = authorId[0]
             for report in reportValues :
                 if re.match('FERMILAB-' + series, report, re.IGNORECASE):
                     y = [report, str(recid), author, title, authorId, experiment, authorAff]
-                    #print "y = ", y
                     reports.append(y)
         reports.sort(reverse=True)
 
@@ -102,16 +93,13 @@ def bst_fermilab():
         output.write(dateTimeStamp)
         output.write('<br />\n<table>\n')
         for report in reports :
-            #print "report =", report
             if report[4]:
                 search2 = '035__a:' + report[4]
-                #print "search2 =", search2
                 result = perform_request_search(p=search2, cc='HepNames')
-                #print report[4], result
                 report[2] = '<a href="http://inspirehep.net/record/' + str(result[0]) + '">'+report[2]+'</a>'
             line = '<tr><td><a href="http://inspirehep.net/record/'+report[1]+'">'+report[0]+'</a></td>\
                     <td>'+report[2]+'</td><td>'+report[3]+'</td></tr>\n'
-            if re.search(r'THESIS', report[0]):
+            if re.search(r'THESIS', report[0]) or re.search(r'MASTERS', report[0]) or re.search(r'BACHELORS', report[0]):
                 if report[5]:
                     search2 = '119__a:' + report[5]
                     result = perform_request_search(p=search2, cc='Experiments')
@@ -136,14 +124,11 @@ def bst_fermilab():
     reports = []
     currentyear = time.strftime('%Y')
     for series in SERIES2 :
-        #print series
         for year in range(1970, time.localtime()[0]+1) :
-            #print year
             dd = str(year)
             dd = re.sub(r"19", "", dd)
             dd = re.sub(r"20", "", dd)
             search = "find r fermilab-" + series + "-" + dd + "*"
-            #print search
             result = perform_request_search(p=search, cc='HEP')
             for recid in result :
                 reportValues = get_fieldvalues(recid, '037__a')
@@ -158,15 +143,11 @@ def bst_fermilab():
                 else :
                     title = ''
                 for report in reportValues :
-                    #print 'report = ' + report
-                    #print 'FERMILAB-' + series
                     if re.match('FERMILAB-' + series, report, re.IGNORECASE) :
                         number = re.sub("FERMILAB-" + series + "-", "", report)
                         y = [year, number, report, str(recid), author, title]
-                        #print 'y = ' , y
                         reports.append(y)
     reports.sort(reverse=True)
-    #print reports
 
     filename = os.path.join(CFG_FERMILAB_PATH, 'fermilab-reports-preprints.html')
     output = open(filename, 'w')
