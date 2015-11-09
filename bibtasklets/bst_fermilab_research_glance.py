@@ -56,7 +56,7 @@ def create_table():
     """HTML generation by lxml.html tree."""
 
     divisions = ['All', 'E', 'CMS', 'T', 'A', 'AE', 'PPD', 'AD/APC',
-                 'TD', 'CD', 'Other']
+                 'TD', 'CD', 'ND', 'LBN', 'Other']
     pubtypes = ['All', 'PUB', 'THESIS', 'CONF', 'TM', 'FN']
     dates = [YEAR_2, YEAR_1, YEAR, MONTH_2, MONTH_1, MONTH]
     years = [YEAR_2, YEAR_1, YEAR]
@@ -170,6 +170,10 @@ Division papers"))
 Astrophysics experimental papers"), E.TD({'class': 'l'}, "CD: Computing \
 Sector papers"))
     table2.append(glos_tr_td)
+    glos_tr_td = E.TR(E.TD({'class': 'l'}, "ND: Neutrino Division papers"), \
+E.TD({'class': 'l'}, "LBN: Long Baseline Neutrino Sector papers"))
+    table2.append(glos_tr_td)
+
     glos_tr_td = E.TR(E.TD({'class': 'l'}, " "), E.TD({'class': 'l'}, " "))
     table2.append(glos_tr_td)
     glos_tr_td = E.TR(E.TD({'class': 'l'}, " "), E.TD({'class': 'l'}, " "))

@@ -26,8 +26,8 @@ same, the script passes the test.
 
 """
 
-import hashlib
-import re
+#import hashlib
+#import re
 import unittest
 
 
@@ -88,15 +88,15 @@ class ResearchGlanceTests(unittest.TestCase):
                          "did not find 2 top level tables")
         self.assertEqual(len(tables[0].xpath('tr')), 7,
                          "main table doesn't have 7 rows")
-        self.assertEqual(len(tables[0].xpath('tr/td')), 91,
-                         "main table doesn't have 91 td elements")
+        self.assertEqual(len(tables[0].xpath('tr/td')), 105,
+                         "main table doesn't have 105 td elements")
         rowlabels = ['', 'All', 'PUB', 'THESIS', 'CONF', 'TM', 'FN']
         self.assertEqual([r.getchildren()[0].text_content()
                           for r in tables[0].xpath('tr')],
                          rowlabels,
                          "the row labels are not as expected")
         collabels = ['', 'Date', 'All', 'E', 'CMS', 'T', 'AT', 'AE', 'PPD',
-                     'AD/APC', 'TD', 'CD', 'Other']
+                     'AD/APC', 'TD', 'CD', 'ND', 'LBN', 'Other']
         self.assertEqual([c.text_content()
                           for c in tables[0].xpath('tr')[0].getchildren()],
                          collabels,
