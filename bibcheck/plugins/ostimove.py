@@ -25,23 +25,23 @@
 from invenio.bibrecord import record_add_field
 import re
 
-provenance = 'OSTI'
+PROVENANCE = 'OSTI'
 
-osti_id = re.compile(r'^https?://(?:www\.)?osti\.gov/.*?\D(\d+)$')
+OSTI_ID = re.compile(r'^https?://(?:www\.)?osti\.gov/.*?\D(\d+)$')
 
 
 def check_record(record):
     """ move 8564_u/y to 035__a/9 """
     for pos, val in record.iterfield('8564_u',
-                                     subfield_filter=('y', provenance)):
+                                     subfield_filter=('y', PROVENANCE)):
         if val:
-            #val = val.replace('%26', '&')
-            ostimatch = osti_id.match(val)
+            ostimatch = OSTI_ID.match(val)
             if ostimatch:
-                tup = ostimatch.groups()
-                tst = ''.join(tup)
-                osti_subfields = [('9', 'OSTI'), ('a', tst)]
-                record_add_field(record, '035', ' ', ' ', subfields=osti_subfields)
+                ostimatch_tuple = ostimatch.groups()
+                ostimatch_string = ''.join(ostimatch_tuple)
+                osti_subfields = [('9', 'OSTI'), ('a', ostimatch_string)]
+                record_add_field(record, '035', ' ', ' ',
+                                     subfields=osti_subfields)
                 record.delete_field((pos[0][0:3], pos[1], None))
                 record.set_amended(
                     "%s: moved link '%s'" % (record.record_id, val))
